@@ -1,0 +1,49 @@
+version: '3'
+
+services:
+  # Serveur web frontal (accessible depuis l’extérieur)
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    networks:
+      - frontend
+    restart: always
+
+  # Serveur d’application (passerelle entre front et back)
+  app:
+    image: ubuntu:latest
+    command: >
+      bash -c "apt-get update &&
+               apt-get install -y iputils-ping &&
+               sleep infinity"
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      - nginx
+      - db
+    restart: always
+
+  # Base de données (isolée, non accessible depuis l’extérieur)
+  db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: myapp
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - backend
+    restart: always
+
+# Définition des réseaux
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+
+# Volume persistant
+volumes:
+  db_data:
